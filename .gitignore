@@ -1,0 +1,9 @@
+# Normalized datasets (build artifacts)
+datasets/normalized/*
+!datasets/normalized/README.md
+
+# Preprocessed datasets (build artifacts, except for the given ones)
+datasets/preprocessed/*
+!datasets/preprocessed/README.md
+!datasets/preprocessed/A1-synthetic.txt
+!datasets/preprocessed/A1-turbine.txt
