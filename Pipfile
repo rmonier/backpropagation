@@ -6,8 +6,8 @@ verify_ssl = true
 [scripts]
 preprocess = "python preparation/preprocess.py"
 normalize = "python preparation/normalize.py"
-train_bp = "julia network/bp.jl"
-train_mlr = "julia network/mlr.jl"
+train_bp = "julia --project=. -e 'using Pkg; Pkg.instantiate()' network/bp.jl"
+train_mlr = "julia --project=. -e 'using Pkg; Pkg.instantiate()' network/mlr.jl"
 evaluate = "python evaluation/evaluate.py"
 
 [dev-packages]
