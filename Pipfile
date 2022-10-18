@@ -4,10 +4,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [scripts]
+install = "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
 preprocess = "python preparation/preprocess.py"
 normalize = "python preparation/normalize.py"
-train_bp = "julia --project=. -e 'using Pkg; Pkg.instantiate()' network/bp.jl"
-train_mlr = "julia --project=. -e 'using Pkg; Pkg.instantiate()' network/mlr.jl"
+train_bp = "julia --project=. network/bp.jl"
+train_mlr = "julia --project=. network/mlr.jl"
 evaluate = "python evaluation/evaluate.py"
 
 [dev-packages]
