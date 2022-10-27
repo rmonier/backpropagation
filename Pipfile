@@ -17,4 +17,4 @@ evaluate = "python evaluation/evaluate.py"
 pandas = "1.5.0"
 
 [requires]
-python_version = "3.10"
+python_version = "3.11"
