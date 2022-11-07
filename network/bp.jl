@@ -14,7 +14,7 @@ end
 
 # We parse the parameters
 
-if length(ARGS) != 5
+if length(ARGS) != 6
     throw(ArgumentError("Invalid number of parameters."))
 end
 
@@ -25,22 +25,11 @@ layers = let expr = Meta.parse(ARGS[2])
     Int64.(expr.args)
 end
 fact_str = ARGS[3]
-fact::Activation = if fact_str == "sigmoid"
-    sigmoid::Activation
-elseif fact_str == "relu" 
-    relu::Activation
-elseif fact_str == "linear"
-    linear::Activation
-elseif fact_str == "tanh"
-    tanh::Activation
-else
-    throw(ArgumentError("This activation function is not recognized"))
-end
 learning_rate = parse(Float64, ARGS[4])
-epochs = parse(Int64, ARGS[5])
-# momentum = parse(Float64, ARGS[6])
+momentum = parse(Float64, ARGS[5])
+epochs = parse(Int64, ARGS[6])
 
-println("PARAMETERS: normalized_dataset=\"", dataset_file, "\" layers=", layers, " fact=", fact, " learning_rate=", learning_rate, " epochs=", epochs)
+println("PARAMETERS: normalized_dataset=\"", dataset_file, "\" layers=", layers, " fact=", fact_str, " learning_rate=", learning_rate, " momentum=", momentum, " epochs=", epochs)
 
 print("Reading data...")
 df = CSV.read(dataset_file, DataFrames.DataFrame, delim='	')
@@ -56,19 +45,22 @@ println(train_df)
 println("Test data:")
 println(test_df)
 
-print("Removing target column for the test data...")
-test_df = DataFrames.select(test_df, DataFrames.Not(:pop))
-println("done.")
 println("Final test data:")
 println(test_df)
 
 struct NeuralNet
-    L::Int64                        # number of layers
-    n::Vector{Int64}                # sizes of layers
-    h::Vector{Vector{Float64}}      # units field
-    xi::Vector{Vector{Float64}}     # units activation
-    w::Vector{Array{Float64,2}}     # weights
-    theta::Vector{Vector{Float64}}  # thresholds
+    L::Int64                              # number of layers
+    n::Vector{Int64}                      # sizes of layers
+    h::Vector{Vector{Float64}}            # units field
+    xi::Vector{Vector{Float64}}           # units activation
+    w::Vector{Array{Float64,2}}           # weights
+    theta::Vector{Vector{Float64}}        # thresholds
+    delta::Array{Array{Float64}}          # propagation error
+    d_w::Vector{Array{Float64,2}}         # weights delta
+    d_theta::Vector{Vector{Float64}}      # thresholds delta
+    d_w_prev::Vector{Array{Float64,2}}    # previous weights delta
+    d_theta_prev::Vector{Vector{Float64}} # previous thresholds delta
+    fact::Activation                      # activation function
 end
 
 function NeuralNet(layers::Vector{Int64})
@@ -78,21 +70,43 @@ function NeuralNet(layers::Vector{Int64})
     h = Vector{Float64}[]
     xi = Vector{Float64}[]
     theta = Vector{Float64}[]
+    d_theta = Vector{Float64}[]
+    delta = Array{Float64}[]
     for l in 1:L
         push!(h, zeros(layers[l]))
         push!(xi, zeros(layers[l]))
         push!(theta, rand(layers[l]))                    # random, but should have also negative values
+        push!(d_theta, zeros(layers[l]))
+        push!(delta, zeros(layers[l]))
     end
 
     # Initialize weights
 
     w = Array{Float64,2}[]
+    d_w = Array{Float64,2}[]
     push!(w, zeros(1, 1))                          # unused, but needed to ensure w[2] refers to weights between the first two layers
+    push!(d_w, zeros(1, 1))
     for l in 2:L
         push!(w, rand(layers[l], layers[l - 1]))     # random, but should have also negative values
+        push!(d_w, zeros(layers[l], layers[l - 1]))
     end
 
-    return NeuralNet(L, n, h, xi, w, theta)
+    d_w_prev = d_w
+    d_theta_prev = d_theta
+    
+    fact::Activation = if fact_str == "sigmoid"
+        sigmoid::Activation
+    elseif fact_str == "relu" 
+        relu::Activation
+    elseif fact_str == "linear"
+        linear::Activation
+    elseif fact_str == "tanh"
+        tanh::Activation
+    else
+        throw(ArgumentError("This activation function is not recognized"))
+    end
+
+    return NeuralNet(L, n, h, xi, w, theta, delta, d_w, d_theta, d_w_prev, d_theta_prev, fact)
 end
 
 function sigmoid_func(h::Float64)::Float64
@@ -103,7 +117,12 @@ function sigmoid_derivative(x::Vector{Float64})::Vector{Float64}
     return x .* (1 .- x)
 end
 
-function feed_forward!(nn::NeuralNet, x_in::Vector{Float64}, y_out::Vector{Float64})
+function sigmoid_derivative(x::Float64)::Float64
+    return x * (1 - x)
+end
+
+#FIXME: outputs [NaN] starting from some epoch
+function feed_forward!(nn::NeuralNet, x_in::Vector{Float64})::Vector{Float64}
     # copy input to first layer, Eq. (6)
     nn.xi[1] .= x_in
     
@@ -117,36 +136,80 @@ function feed_forward!(nn::NeuralNet, x_in::Vector{Float64}, y_out::Vector{Float
             end
             # save field and calculate activation, Eq. (7)
             nn.h[l][i] = h
-            nn.xi[l][i] = (fact === sigmoid::Activation ? sigmoid_func(h) : throw(ArgumentError("This activation function is not implemented")))
+            nn.xi[l][i] = (nn.fact === sigmoid::Activation ? sigmoid_func(h) : throw(ArgumentError("This activation function is not implemented")))
         end
     end
 
     # copy activation in output layer as output, Eq. (9)
-    y_out .= nn.xi[nn.L]
+    return nn.xi[nn.L]
 end
 
-function transfer(activation_vector::Vector{Float64})::Vector{Float64}
+function transfer(fact::Activation, activation_vector::Vector{Float64})::Vector{Float64}
     return (fact === sigmoid::Activation ? sigmoid_derivative(activation_vector) : throw(ArgumentError("This activation function is not implemented")))
 end
 
-# not sure this works
-function update_weights!(weights::Vector{Array{Float64,2}}, d_theta::Vector{Vector{Float64}}, learning_rate::Float64)
-    #TODO
+function transfer(fact::Activation, activation_scalar::Float64)::Float64
+    return (fact === sigmoid::Activation ? sigmoid_derivative(activation_scalar) : throw(ArgumentError("This activation function is not implemented")))
 end
 
-# not sure this works
-function back_propagation(weights::Vector{Array{Float64,2}}, activations::Vector{Vector{Float64}}, x::Vector{Float64}, y::Vector{Float64})::Array{Float64,2}
-    #TODO
+function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_outputs::Vector{Float64})
+    nn.delta[nn.L] = transfer(nn.fact, nn.h[nn.L]) .* (y .- desired_outputs) # Eq. (11)
+
+    # back-propagation of input pattern Eq. (12)
+    for l in nn.L:-1:2
+        for j in 1:nn.n[l - 1]
+            error = 0
+            for i in 1:nn.n[l]
+                error += nn.delta[l][i] * nn.w[l][i, j]
+            end
+            nn.delta[l-1][j] = transfer(nn.fact, nn.h[l-1][j]) * error
+        end
+    end
 end
 
-# not sure this works
-function train(nn::NeuralNet, x::Vector{Float64}, y::Vector{Float64}, learning_rate::Float64, epochs::Int64)
-    #TODO
+function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, momentum::Float64)
+    # Eq. 14
+    for l in 2:nn.L
+        for i in 1:nn.n[l]
+            for j in 1:nn.n[l - 1]
+                nn.d_w[l][i, j] = -learning_rate * nn.delta[l][i] * nn.xi[l-1][j] + momentum * nn.d_w_prev[l][i, j]
+                nn.w[l][i, j] += nn.d_w[l][i, j]
+            end 
+        end
+    end
+    for l in 2:nn.L
+        for i in 1:nn.n[l]
+            nn.d_theta[l][i] = learning_rate * nn.delta[l][i] + momentum * nn.d_theta_prev[l][i]
+            nn.theta[l][i] += nn.d_theta[l][i]
+        end
+    end
 end
 
-# not sure this works
-function predict(nn::NeuralNet, x::Vector{Float64}, y::Vector{Float64})::Vector{Float64}
-    feed_forward!(nn, x, y)
+function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)
+    for _ in 1:epochs
+        for pattern in 1:length(x_in)
+            y = feed_forward!(nn, x_in[pattern])
+            back_propagation!(nn, y, desired_outputs)
+            update_weights_and_thresholds!(nn, learning_rate, momentum)
+        end
+        #TODO: Feed−forward all training patterns and calculate their prediction quadratic error
+        #TODO: Better name
+        #sum = 0
+        #for pattern in 1:length(x_in)
+        #    what is m? basicly amount of rows in input file, right?
+        #    sum += sqrt(y-desired_outputs)
+        #end
+        #training_prediction_quadratic_error = 0.5 * sum
+        #
+        #TODO: Feed−forward all validation patterns and calculate their prediction quadratic error
+    end
+end
+
+function predict(nn::NeuralNet, x::Vector{Vector{Float64}})::Vector{Vector{Float64}}
+    y = Vector{Vector{Float64}}()
+    for pattern in 1:length(x)
+        push!(y, feed_forward!(nn, x[pattern]))
+    end
     return y
 end
 
@@ -172,28 +235,35 @@ println("nn.w[2]=", nn.w[2])
 
 println("-------------------------------------------")
 
-print("Setting up the input data...")
-x_in = rand(nn.n[1])                        # INPUT DATA
+print("Setting up the input train data...")
+x_in = Matrix{Float64}(train_df[:, 1:end-1])
+x_in = [x_in[i, :] for i in 1:size(x_in, 1)]
+x_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
 print("Training...")
-train(nn, x_in, y_out, learning_rate, epochs)
+train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
 
-println("y_out=", y_out)
+println("x_desired_outputs=", x_desired_outputs)
+
+# We launch the prediction
+
+pred_in = Matrix{Float64}(test_df[:, 1:end-1])
+pred_in = [pred_in[i, :] for i in 1:size(pred_in, 1)]
 
 print("Predicting...")
-predicted = predict(nn, x_in, y_out)
+predicted = predict(nn, pred_in)
 println("done.")
-println("Predicted `pop` values:")
+println("Predicted values (last column):")
 println(predicted)
 
-#print("Calculating accuracy...")
-#correct = 0
-#for i in 1:DataFrames.nrow(test_df)
-#    if predicted[i] == test_df[i, :pop]
-#        correct += 1
-#    end
-#end
-#accuracy = correct / DataFrames.nrow(test_df)
-#println("Accuracy: ", accuracy)
+print("Calculating accuracy...")
+correct = 0
+for i in 1:DataFrames.nrow(test_df)
+    if predicted[i] == test_df[:, end]
+        global correct += 1
+    end
+end
+accuracy = correct / DataFrames.nrow(test_df)
+println("Accuracy: ", accuracy*100, "%")

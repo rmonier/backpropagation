@@ -1,6 +1,7 @@
 import pandas as pd
 import pathlib as pl
 
+#FIXME: name of the column is badly parsed
 def main():
     for txt_file in pl.Path("datasets/preprocessed").glob('A1-*.txt'):
         df = pd.read_csv(f"datasets/preprocessed/{txt_file.name}", encoding='utf8', sep='	')

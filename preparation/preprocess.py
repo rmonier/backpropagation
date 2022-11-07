@@ -1,5 +1,6 @@
 import pandas as pd
 
+#TODO: fix the filtering (0 line)
 def main():
     df = pd.read_csv("datasets/raw/A1-top10s.csv")
     df.dropna(inplace=True)
