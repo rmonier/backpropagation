@@ -7,7 +7,7 @@ verify_ssl = true
 install = "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
 preprocess = "python preparation/preprocess.py"
 normalize = "python preparation/normalize.py"
-train_bp = "julia --project=. network/bp.jl"
+train_bp_top10s = "julia --project=. network/bp.jl 'datasets/normalized/A1-top10s.txt' '[4; 9; 5; 1]' sigmoid 0.1 1000"
 train_mlr = "julia --project=. network/mlr.jl"
 evaluate = "python evaluation/evaluate.py"
 
