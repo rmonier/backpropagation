@@ -10,4 +10,4 @@ datasets/preprocessed/*
 
 # Split datasets (build artifacts)
 datasets/split/*
-!datasets/preprocessed/README.md
+!datasets/split/README.md
