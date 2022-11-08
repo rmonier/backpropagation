@@ -27,14 +27,6 @@ train_df = CSV.read(dataset_path * "/train.txt", DataFrames.DataFrame, delim='	'
 test_df = CSV.read(dataset_path * "/test.txt", DataFrames.DataFrame, delim='	')
 println("done.")
 
-println("Train data:")
-println(train_df)
-println("Test data:")
-println(test_df)
-
-println("Final test data:")
-println(test_df)
-
 struct NeuralNet
     L::Int64                              # number of layers
     n::Vector{Int64}                      # sizes of layers
@@ -207,21 +199,6 @@ nn = NeuralNet(layers)
 y_out = zeros(nn.n[nn.L])
 println("done.")
 
-println("-------------------------------------------")
-
-println("nn.L=", nn.L)
-println("nn.n=", nn.n)
-
-println("nn.xi=", nn.xi)
-println("nn.xi[1]=", nn.xi[1])
-println("nn.xi[2]=", nn.xi[2])
-
-
-println("nn.w=", nn.w)
-println("nn.w[2]=", nn.w[2])
-
-println("-------------------------------------------")
-
 print("Setting up the input train data...")
 x_in = Matrix{Float64}(train_df[:, 1:end-1])
 x_in = [x_in[i, :] for i in 1:size(x_in, 1)]
@@ -232,7 +209,7 @@ print("Training...")
 train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
 
-println("x_desired_outputs=", x_desired_outputs)
+#println("x_desired_outputs=", x_desired_outputs)
 
 # We launch the prediction
 
@@ -242,8 +219,8 @@ pred_in = [pred_in[i, :] for i in 1:size(pred_in, 1)]
 print("Predicting...")
 predicted = predict(nn, pred_in)
 println("done.")
-println("Predicted values (last column):")
-println(predicted)
+#println("Predicted values (last column):")
+#println(predicted)
 
 print("Calculating accuracy...")
 correct = 0
