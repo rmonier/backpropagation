@@ -1,16 +1,7 @@
 import DataFrames
 import CSV
-import Random
 
 @enum Activation sigmoid=1 relu=2 linear=3 tanh=4
-
-function splitdf(df, pct)
-    @assert 0 <= pct <= 1
-    ids = collect(axes(df, 1))
-    Random.shuffle!(ids)
-    sel = ids .<= DataFrames.nrow(df) .* pct
-    return view(df, sel, :), view(df, .!sel, :)
-end
 
 # We parse the parameters
 
@@ -18,7 +9,7 @@ if length(ARGS) != 6
     throw(ArgumentError("Invalid number of parameters."))
 end
 
-dataset_file = ARGS[1]
+dataset_path = ARGS[1]
 
 layers = let expr = Meta.parse(ARGS[2])
     @assert expr.head == :vcat
@@ -29,17 +20,13 @@ learning_rate = parse(Float64, ARGS[4])
 momentum = parse(Float64, ARGS[5])
 epochs = parse(Int64, ARGS[6])
 
-println("PARAMETERS: normalized_dataset=\"", dataset_file, "\" layers=", layers, " fact=", fact_str, " learning_rate=", learning_rate, " momentum=", momentum, " epochs=", epochs)
+println("PARAMETERS: normalized_dataset=\"", dataset_path, "\" layers=", layers, " fact=", fact_str, " learning_rate=", learning_rate, " momentum=", momentum, " epochs=", epochs)
 
 print("Reading data...")
-df = CSV.read(dataset_file, DataFrames.DataFrame, delim='	')
+train_df = CSV.read(dataset_path * "/train.txt", DataFrames.DataFrame, delim='	')
+test_df = CSV.read(dataset_path * "/test.txt", DataFrames.DataFrame, delim='	')
 println("done.")
-println("Full data:")
-println(df)
 
-print("Splitting data...")
-train_df, test_df = splitdf(df, 0.8)
-println("done.")
 println("Train data:")
 println(train_df)
 println("Test data:")

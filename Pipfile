@@ -5,12 +5,17 @@ verify_ssl = true
 
 [scripts]
 install = "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
+
 preprocess = "python preparation/preprocess.py"
 normalize = "python preparation/normalize.py"
-train_bp_turbine = "julia --project=. network/bp.jl 'datasets/normalized/A1-turbine.txt' '[4; 9; 5; 1]' sigmoid 0.1 0.5 1000"
-train_bp_synthetic = "julia --project=. network/bp.jl 'datasets/normalized/A1-synthetic.txt' '[9; 9; 5; 1]' sigmoid 0.1 0.5 1000"
-train_bp_top10s = "julia --project=. network/bp.jl 'datasets/normalized/A1-top10s.txt' '[9; 9; 5; 1]' sigmoid 0.1 0.5 1000"
+split = "julia --project=. preparation/split.jl"
+
+train_bp_turbine = "julia --project=. network/bp.jl 'datasets/split/A1-turbine' '[4; 9; 5; 1]' sigmoid 0.1 0.5 1000"
+train_bp_synthetic = "julia --project=. network/bp.jl 'datasets/split/A1-synthetic' '[9; 9; 5; 1]' sigmoid 0.1 0.5 1000"
+train_bp_top10s = "julia --project=. network/bp.jl 'datasets/split/A1-top10s' '[9; 9; 5; 1]' sigmoid 0.1 0.5 1000"
+
 train_mlr = "julia --project=. network/mlr.jl"
+
 evaluate = "python evaluation/evaluate.py"
 
 [dev-packages]

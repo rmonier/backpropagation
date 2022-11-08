@@ -7,3 +7,7 @@ datasets/preprocessed/*
 !datasets/preprocessed/README.md
 !datasets/preprocessed/A1-synthetic.txt
 !datasets/preprocessed/A1-turbine.txt
+
+# Split datasets (build artifacts)
+datasets/split/*
+!datasets/preprocessed/README.md
