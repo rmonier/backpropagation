@@ -18,4 +18,4 @@ run a script by doing:
 pipenv run <script>
 ```
 
-when adding or removing a package to the Julia project, regenerate the manifest with Pkg.resolve()
+when adding or removing a package to the Julia project, regenerate the manifest with `julia --project=. -e 'using Pkg; Pkg.resolve()'`
