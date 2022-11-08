@@ -25,7 +25,7 @@ for dataset_file in Glob.glob("*.txt", "datasets/normalized")
     println(df)
 
     print("Splitting data...")
-    train_df, test_df = splitdf(df, 0.8)
+    train_df, test_df = (if folder_name == "A1-turbine" splitdf(df, 0.85) else splitdf(df, 0.8) end)
     println("done.")
 
     println("Saving train data...")
