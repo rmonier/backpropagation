@@ -131,8 +131,8 @@ function transfer(fact::Activation, activation_scalar::Float64)::Float64
     return (fact === sigmoid::Activation ? sigmoid_derivative(activation_scalar) : throw(ArgumentError("This activation function is not implemented")))
 end
 
-function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_outputs::Vector{Float64})
-    nn.delta[nn.L] = transfer(nn.fact, nn.h[nn.L]) .* (y .- desired_outputs) # Eq. (11)
+function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Float64)
+    nn.delta[nn.L] = transfer(nn.fact, nn.h[nn.L]) .* (y .- desired_output) # Eq. (11)
 
     # back-propagation of input pattern Eq. (12)
     for l in nn.L:-1:2
@@ -153,6 +153,7 @@ function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, m
             for j in 1:nn.n[l - 1]
                 nn.d_w[l][i, j] = -learning_rate * nn.delta[l][i] * nn.xi[l-1][j] + momentum * nn.d_w_prev[l][i, j]
                 nn.w[l][i, j] += nn.d_w[l][i, j]
+                nn.d_w_prev[l][i, j] = nn.d_w[l][i, j]
             end 
         end
     end
@@ -160,6 +161,7 @@ function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, m
         for i in 1:nn.n[l]
             nn.d_theta[l][i] = learning_rate * nn.delta[l][i] + momentum * nn.d_theta_prev[l][i]
             nn.theta[l][i] += nn.d_theta[l][i]
+            nn.d_theta_prev[l][i] = nn.d_theta[l][i]
         end
     end
 end
@@ -168,7 +170,7 @@ function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Ve
     for _ in 1:epochs
         for pattern in 1:length(x_in)
             y = feed_forward!(nn, x_in[pattern])
-            back_propagation!(nn, y, desired_outputs)
+            back_propagation!(nn, y, desired_outputs[pattern])
             update_weights_and_thresholds!(nn, learning_rate, momentum)
         end
         #TODO: Feed−forward all training patterns and calculate their prediction quadratic error
