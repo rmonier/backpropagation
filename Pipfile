@@ -15,7 +15,7 @@ train_bp_turbine = "julia --project=. network/bp.jl \"datasets/split/A1-turbine\
 train_bp_synthetic = "julia --project=. network/bp.jl \"datasets/split/A1-synthetic\" \"[9; 9; 5; 1]\" sigmoid 0.1 0.5 1000"
 train_bp_top10s = "julia --project=. network/bp.jl \"datasets/split/A1-top10s\" \"[9; 9; 5; 1]\" sigmoid 0.1 0.5 1000"
 
-train_mlr = "julia --project=. network/mlr.jl"
+train_mlr = "python network/mlr.py"
 
 evaluate = "python evaluation/evaluate.py"
 
@@ -23,6 +23,7 @@ evaluate = "python evaluation/evaluate.py"
 
 [packages]
 pandas = "1.5.0"
+scikit-learn = "1.1.3"
 
 [requires]
 python_version = "3.11"
