@@ -96,7 +96,6 @@ function sigmoid_derivative(x::Float64)::Float64
     return sigmoid_func(x) * (1 - sigmoid_func(x))
 end
 
-#FIXME: outputs [NaN] starting from some epoch
 function feed_forward!(nn::NeuralNet, x_in::Vector{Float64})::Vector{Float64}
     # copy input to first layer, Eq. (6)
     nn.xi[1] .= x_in
