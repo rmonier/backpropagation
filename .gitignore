@@ -11,3 +11,7 @@ datasets/preprocessed/*
 # Split datasets (build artifacts)
 datasets/split/*
 !datasets/split/README.md
+
+# Evaluation results (build artifacts)
+evaluation/results/*
+!evaluation/results/README.md

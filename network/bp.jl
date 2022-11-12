@@ -5,13 +5,14 @@ import CSV
 
 # We parse the parameters
 
-if length(ARGS) != 6
+if length(ARGS) != 7
     throw(ArgumentError("Invalid number of parameters."))
 end
 
 dataset_path = ARGS[1]
 
-layers = let expr = Meta.parse(ARGS[2])
+layers_str = ARGS[2]
+layers = let expr = Meta.parse(layers_str)
     @assert expr.head == :vcat
     Int64.(expr.args)
 end
@@ -19,6 +20,7 @@ fact_str = ARGS[3]
 learning_rate = parse(Float64, ARGS[4])
 momentum = parse(Float64, ARGS[5])
 epochs = parse(Int64, ARGS[6])
+out_filename = ARGS[7]
 
 println("PARAMETERS: normalized_dataset=\"", dataset_path, "\" layers=", layers, " fact=", fact_str, " learning_rate=", learning_rate, " momentum=", momentum, " epochs=", epochs)
 
@@ -159,32 +161,30 @@ function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, m
     end
 end
 
-function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)::Float64
-    quadratic_error_tmp = 0
+function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)
+    errors = []
     for _ in 1:epochs
+        quadratic_error = 0
         for pattern in 1:length(x_in)
             y = feed_forward!(nn, x_in[pattern])
             back_propagation!(nn, y, desired_outputs[pattern])
             update_weights_and_thresholds!(nn, learning_rate, momentum)
             #Dimension(z)==1, so only one loop is needed (TODO: Sure?)
-            quadratic_error_tmp += abs2(y[1] - desired_outputs[pattern])
+            quadratic_error += abs2(y[1] - desired_outputs[pattern])
         end
+        errors = [errors; 0.5 * quadratic_error]
     end
-    #FIXME: that should be for each epochs
-    quadratic_error = 0.5 * quadratic_error_tmp
-    print("[quadratic_error=", quadratic_error, "]...")
-    return quadratic_error
+
+    # Write in CSV file the errors
+    CSV.write("evaluation/results/epochs_" * out_filename, DataFrames.DataFrame("Epoch" => 1:epochs, "Error" => errors))
 end
 
-function predict(nn::NeuralNet, x::Vector{Vector{Float64}}, desired_outputs::Vector{Float64})::Tuple{Vector{Vector{Float64}},Float64}
+function predict(nn::NeuralNet, x::Vector{Vector{Float64}}, desired_outputs::Vector{Float64})::Vector{Vector{Float64}}
     y = Vector{Vector{Float64}}()
-    quadratic_error_tmp = 0
     for pattern in 1:length(x)
         push!(y, feed_forward!(nn, x[pattern]))
-        quadratic_error_tmp += abs2(y[pattern][1] - desired_outputs[pattern])
     end
-    quadratic_error = 0.5 * quadratic_error_tmp
-    return y, quadratic_error
+    return y
 end
 
 # We launch the training
@@ -201,8 +201,7 @@ x_train_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
 print("> Training...")
-quadratic_error_train = train(nn, x_in, x_train_desired_outputs, learning_rate, momentum, epochs)
-print("[quadratic_error_train=", quadratic_error_train, "]...")
+train(nn, x_in, x_train_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
 
 # We launch the prediction
@@ -224,8 +223,7 @@ x_test_desired_outputs = Vector{Float64}(test_df[:, end])
 #println("x_test_desired_outputs=", x_test_desired_outputs)
 
 print("> Predicting...")
-predicted, quadratic_error_validation = predict(nn, pred_in, x_test_desired_outputs)
-print("[quadratic_error_validation=", quadratic_error_validation, "]...")
+predicted = predict(nn, pred_in, x_test_desired_outputs)
 println("done.")
 
 #println("Predicted values (last column):")
@@ -234,4 +232,16 @@ println("done.")
 print("> Calculating MAPE...")
 MAPE = calculate_MAPE(predicted, x_test_desired_outputs)
 println("done.")
+
+# Save the parameters and results in a CSV file
+output = "evaluation/results/bp_" * splitext(basename(dataset_path))[1] * ".csv"
+CSV.write(output, DataFrames.DataFrame(
+    "Layers" => layers_str,
+    "Activation Function" => fact_str,
+    "Learning Rate" => learning_rate,
+    "Momentum" => momentum,
+    "Epochs" => epochs,
+    "MAPE Error" => MAPE
+), append = isfile(output))
+
 println("Accuracy: ", 100-MAPE, " %")
