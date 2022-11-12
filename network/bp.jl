@@ -22,7 +22,7 @@ epochs = parse(Int64, ARGS[6])
 
 println("PARAMETERS: normalized_dataset=\"", dataset_path, "\" layers=", layers, " fact=", fact_str, " learning_rate=", learning_rate, " momentum=", momentum, " epochs=", epochs)
 
-print("Reading data...")
+print("> Reading data...")
 train_df = CSV.read(dataset_path * "/train.txt", DataFrames.DataFrame, delim='	')
 test_df = CSV.read(dataset_path * "/test.txt", DataFrames.DataFrame, delim='	')
 println("done.")
@@ -124,7 +124,7 @@ end
 
 function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Float64)
     for i in nn.n[nn.L]
-        nn.delta[nn.L][i] = transfer(nn.fact, nn.h[nn.L][i]) * (y[i] - desired_output[i]) # Eq. (11)
+        nn.delta[nn.L][i] = transfer(nn.fact, nn.h[nn.L][i]) * (y[i] - desired_output) # Eq. (11)
     end
 
     # back-propagation of input pattern Eq. (12)
@@ -189,40 +189,46 @@ end
 
 # We launch the training
 
-print("Creating the Neural Network and initializing weights...")
+print("> Creating the Neural Network and initializing weights...")
 nn = NeuralNet(layers)
 y_out = zeros(nn.n[nn.L])
 println("done.")
 
-print("Setting up the input train data...")
+print("> Setting up the input train data...")
 x_in = Matrix{Float64}(train_df[:, 1:end-1])
 x_in = [x_in[i, :] for i in 1:size(x_in, 1)]
-x_desired_outputs = Vector{Float64}(train_df[:, end])
+x_train_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
-print("Training...")
-train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
+print("> Training...")
+train(nn, x_in, x_train_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
-
-#println("x_desired_outputs=", x_desired_outputs)
 
 # We launch the prediction
 
+function calculate_MAPE(y::Vector{Vector{Float64}}, z::Vector{Float64})::Float64
+    sum_abs_distance = 0
+    sum_z = 0
+    for i in 1:length(z)
+        sum_abs_distance += abs(y[i][1] - z[i])
+        sum_z += z[i]
+    end
+    return 100 * (sum_abs_distance / sum_z)
+end
+
 pred_in = Matrix{Float64}(test_df[:, 1:end-1])
 pred_in = [pred_in[i, :] for i in 1:size(pred_in, 1)]
+x_test_desired_outputs = Vector{Float64}(test_df[:, end])
 
-print("Predicting...")
+#println("x_test_desired_outputs=", x_test_desired_outputs)
+
+print("> Predicting...")
 predicted = predict(nn, pred_in)
 println("done.")
 #println("Predicted values (last column):")
 #println(predicted)
 
-print("Calculating accuracy...")
-correct = 0
-for i in 1:DataFrames.nrow(test_df)
-    if predicted[i] == test_df[:, end]
-        global correct += 1
-    end
-end
-accuracy = correct / DataFrames.nrow(test_df)
-println("Accuracy: ", accuracy*100, "%")
+print("> Calculating MAPE...")
+MAPE = calculate_MAPE(predicted, x_test_desired_outputs)
+println("done.")
+println("Accuracy: ", 100-MAPE, " %")
