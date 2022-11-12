@@ -120,7 +120,7 @@ function feed_forward!(nn::NeuralNet, x_in::Vector{Float64})::Vector{Float64}
     end
 
     # copy activation in output layer as output, Eq. (9)
-    return nn.xi[nn.L]
+    return copy(nn.xi[nn.L])
 end
 
 function transfer(fact::Activation, activation_vector::Vector{Float64})::Vector{Float64}
@@ -131,8 +131,10 @@ function transfer(fact::Activation, activation_scalar::Float64)::Float64
     return (fact === sigmoid::Activation ? sigmoid_derivative(activation_scalar) : throw(ArgumentError("This activation function is not implemented")))
 end
 
-function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Float64)
-    nn.delta[nn.L] = transfer(nn.fact, nn.h[nn.L]) .* (y .- desired_output) # Eq. (11)
+function back_propagation!(nn::NeuralNet, y::Vector{Float64}, z::Float64)
+    for i in nn.n[nn.L]
+        nn.delta[nn.L][i] = (sigmoid_func(nn.h[nn.L][i]) * (1 - sigmoid_func(nn.h[nn.L][i]))) * (y[i] - z[i]) # Eq. (11)
+    end
 
     # back-propagation of input pattern Eq. (12)
     for l in nn.L:-1:2
@@ -141,7 +143,7 @@ function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Fl
             for i in 1:nn.n[l]
                 error += nn.delta[l][i] * nn.w[l][i, j]
             end
-            nn.delta[l-1][j] = transfer(nn.fact, nn.h[l-1][j]) * error
+            nn.delta[l-1][j] =  (sigmoid_func(nn.h[l-1][j]) * (1 - sigmoid_func(nn.h[l-1][j]))) * error
         end
     end
 end
@@ -221,8 +223,8 @@ pred_in = [pred_in[i, :] for i in 1:size(pred_in, 1)]
 print("Predicting...")
 predicted = predict(nn, pred_in)
 println("done.")
-#println("Predicted values (last column):")
-#println(predicted)
+println("Predicted values (last column):")
+println(predicted)
 
 print("Calculating accuracy...")
 correct = 0
