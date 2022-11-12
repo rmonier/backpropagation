@@ -175,12 +175,15 @@ function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Ve
     return quadratic_error
 end
 
-function predict(nn::NeuralNet, x::Vector{Vector{Float64}})::Vector{Vector{Float64}}
+function predict(nn::NeuralNet, x::Vector{Vector{Float64}}, desired_outputs::Vector{Float64})Vector{Vector{Float64}}
     y = Vector{Vector{Float64}}()
+    quadratic_error_tmp = 0
     for pattern in 1:length(x)
         push!(y, feed_forward!(nn, x[pattern]))
+        quadratic_error_tmp += abs2(y[pattern][1] - desired_outputs[pattern])
     end
-    return y
+    quadratic_error = 0.5 * quadratic_error_tmp
+    return y,quadratic_error
 end
 
 # We launch the training
@@ -197,9 +200,9 @@ x_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
 print("Training...")
-quadratic_error=train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
+quadratic_error_test=train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
-println("quadratic_error:", quadratic_error)
+println("quadratic_error test:", quadratic_error_test)
 
 #println("x_desired_outputs=", x_desired_outputs)
 
@@ -207,10 +210,12 @@ println("quadratic_error:", quadratic_error)
 
 pred_in = Matrix{Float64}(test_df[:, 1:end-1])
 pred_in = [pred_in[i, :] for i in 1:size(pred_in, 1)]
-
+pred_out = test_df[:, end]
 print("Predicting...")
-predicted = predict(nn, pred_in)
+predicted, quadratic_error_validation = predict(nn, pred_in, pred_out)
 println("done.")
+println("quadratic_error validation:", quadratic_error_validation)
+
 #println("Predicted values (last column):")
 #println(predicted)
 
