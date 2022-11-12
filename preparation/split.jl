@@ -13,7 +13,6 @@ end
 
 build_folder = "datasets/split/"
 
-println("Looping over the files...")
 for dataset_file in Glob.glob("*.txt", "datasets/normalized")
     println("Processing file $dataset_file...")
     folder_name = splitext(basename(dataset_file))[1]
@@ -28,11 +27,11 @@ for dataset_file in Glob.glob("*.txt", "datasets/normalized")
     train_df, test_df = (if folder_name == "A1-turbine" splitdf(df, 0.85) else splitdf(df, 0.8) end)
     println("done.")
 
-    println("Saving train data...")
+    print("Saving train data...")
     mkpath(build_folder * folder_name)
     CSV.write(build_folder * folder_name * "/train.txt", train_df, delim='	')
     println("done.")
-    println("Saving test data...")
+    print("Saving test data...")
     CSV.write(build_folder * folder_name * "/test.txt", test_df, delim='	')
     println("done.")
 end
