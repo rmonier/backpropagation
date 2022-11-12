@@ -159,32 +159,32 @@ function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, m
     end
 end
 
-function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)
+function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)::Float64
+    quadratic_error_tmp = 0
     for _ in 1:epochs
         for pattern in 1:length(x_in)
             y = feed_forward!(nn, x_in[pattern])
             back_propagation!(nn, y, desired_outputs[pattern])
             update_weights_and_thresholds!(nn, learning_rate, momentum)
+            #Dimension(z)==1, so only one loop is needed (TODO: Sure?)
+            quadratic_error_tmp += abs2(y[1] - desired_outputs[pattern])
         end
-        #TODO: Feed−forward all training patterns and calculate their prediction quadratic error
-        #TODO: Better name
-        #sum = 0
-        #for pattern in 1:length(x_in)
-        #    what is m? basicly amount of rows in input file, right?
-        #    sum += sqrt(y-desired_outputs)
-        #end
-        #training_prediction_quadratic_error = 0.5 * sum
-        #
-        #TODO: Feed−forward all validation patterns and calculate their prediction quadratic error
     end
+    #FIXME: that should be for each epochs
+    quadratic_error = 0.5 * quadratic_error_tmp
+    print("[quadratic_error=", quadratic_error, "]...")
+    return quadratic_error
 end
 
-function predict(nn::NeuralNet, x::Vector{Vector{Float64}})::Vector{Vector{Float64}}
+function predict(nn::NeuralNet, x::Vector{Vector{Float64}}, desired_outputs::Vector{Float64})::Tuple{Vector{Vector{Float64}},Float64}
     y = Vector{Vector{Float64}}()
+    quadratic_error_tmp = 0
     for pattern in 1:length(x)
         push!(y, feed_forward!(nn, x[pattern]))
+        quadratic_error_tmp += abs2(y[pattern][1] - desired_outputs[pattern])
     end
-    return y
+    quadratic_error = 0.5 * quadratic_error_tmp
+    return y, quadratic_error
 end
 
 # We launch the training
@@ -201,7 +201,8 @@ x_train_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
 print("> Training...")
-train(nn, x_in, x_train_desired_outputs, learning_rate, momentum, epochs)
+quadratic_error_train = train(nn, x_in, x_train_desired_outputs, learning_rate, momentum, epochs)
+print("[quadratic_error_train=", quadratic_error_train, "]...")
 println("done.")
 
 # We launch the prediction
@@ -223,8 +224,10 @@ x_test_desired_outputs = Vector{Float64}(test_df[:, end])
 #println("x_test_desired_outputs=", x_test_desired_outputs)
 
 print("> Predicting...")
-predicted = predict(nn, pred_in)
+predicted, quadratic_error_validation = predict(nn, pred_in, x_test_desired_outputs)
+print("[quadratic_error_validation=", quadratic_error_validation, "]...")
 println("done.")
+
 #println("Predicted values (last column):")
 #println(predicted)
 
