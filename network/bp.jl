@@ -124,7 +124,7 @@ end
 
 function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Float64)
     for i in nn.n[nn.L]
-        nn.delta[nn.L][i] = transfer(nn.fact, nn.h[nn.L][i]) * (y[i] - desired_output[i]) # Eq. (11)
+        nn.delta[nn.L][i] = transfer(nn.fact, nn.h[nn.L][i]) * (y[i] - desired_output) # Eq. (11)
     end
 
     # back-propagation of input pattern Eq. (12)
@@ -160,23 +160,19 @@ function update_weights_and_thresholds!(nn::NeuralNet, learning_rate::Float64, m
 end
 
 function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)
+    quadratic_error_tmp = 0
     for _ in 1:epochs
         for pattern in 1:length(x_in)
             y = feed_forward!(nn, x_in[pattern])
             back_propagation!(nn, y, desired_outputs[pattern])
             update_weights_and_thresholds!(nn, learning_rate, momentum)
+            #Dimension(z)==1, so only one loop is needed (TODO: Sure?)
+            quadratic_error_tmp += abs2(y[1] - desired_outputs[pattern])
         end
-        #TODO: Feed−forward all training patterns and calculate their prediction quadratic error
-        #TODO: Better name
-        #sum = 0
-        #for pattern in 1:length(x_in)
-        #    what is m? basicly amount of rows in input file, right?
-        #    sum += sqrt(y-desired_outputs)
-        #end
-        #training_prediction_quadratic_error = 0.5 * sum
-        #
-        #TODO: Feed−forward all validation patterns and calculate their prediction quadratic error
     end
+    quadratic_error = 0.5 * quadratic_error_tmp
+    println("quadratic_error: ", quadratic_error)
+    return quadratic_error
 end
 
 function predict(nn::NeuralNet, x::Vector{Vector{Float64}})::Vector{Vector{Float64}}
@@ -201,8 +197,9 @@ x_desired_outputs = Vector{Float64}(train_df[:, end])
 println("done.")
 
 print("Training...")
-train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
+quadratic_error=train(nn, x_in, x_desired_outputs, learning_rate, momentum, epochs)
 println("done.")
+println("quadratic_error:", quadratic_error)
 
 #println("x_desired_outputs=", x_desired_outputs)
 
