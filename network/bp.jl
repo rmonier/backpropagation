@@ -92,12 +92,8 @@ function sigmoid_func(h::Float64)::Float64
     return 1 / (1 + exp(-h))
 end
 
-function sigmoid_derivative(x::Vector{Float64})::Vector{Float64}
-    return x .* (1 .- x)
-end
-
 function sigmoid_derivative(x::Float64)::Float64
-    return x * (1 - x)
+    return sigmoid_func(x) * (1 - sigmoid_func(x))
 end
 
 #FIXME: outputs [NaN] starting from some epoch
@@ -120,26 +116,24 @@ function feed_forward!(nn::NeuralNet, x_in::Vector{Float64})::Vector{Float64}
     end
 
     # copy activation in output layer as output, Eq. (9)
-    return nn.xi[nn.L]
+    return copy(nn.xi[nn.L])
 end
 
-function transfer(fact::Activation, activation_vector::Vector{Float64})::Vector{Float64}
-    return (fact === sigmoid::Activation ? sigmoid_derivative(activation_vector) : throw(ArgumentError("This activation function is not implemented")))
-end
-
-function transfer(fact::Activation, activation_scalar::Float64)::Float64
-    return (fact === sigmoid::Activation ? sigmoid_derivative(activation_scalar) : throw(ArgumentError("This activation function is not implemented")))
+function transfer(fact::Activation, activation::Float64)::Float64
+    return (fact === sigmoid::Activation ? sigmoid_derivative(activation) : throw(ArgumentError("This activation function is not implemented")))
 end
 
 function back_propagation!(nn::NeuralNet, y::Vector{Float64}, desired_output::Float64)
-    nn.delta[nn.L] = transfer(nn.fact, nn.h[nn.L]) .* (y .- desired_output) # Eq. (11)
+    for i in nn.n[nn.L]
+        nn.delta[nn.L][i] = transfer(nn.fact, nn.h[nn.L][i]) * (y[i] - desired_output[i]) # Eq. (11)
+    end
 
     # back-propagation of input pattern Eq. (12)
     for l in nn.L:-1:2
         for j in 1:nn.n[l - 1]
             error = 0
             for i in 1:nn.n[l]
-                error += nn.delta[l][i] * nn.w[l][i, j]
+                error += nn.delta[l][i] * nn.w[l][i, j] 
             end
             nn.delta[l-1][j] = transfer(nn.fact, nn.h[l-1][j]) * error
         end
