@@ -11,9 +11,9 @@ normalize = "python preparation/normalize.py"
 split = "julia --project=. preparation/split.jl"
 analyze = "python evaluation/analysis.py"
 
-train_bp_turbine = "julia --project=. network/bp.jl \"datasets/split/A1-turbine\" \"[4; 9; 5; 1]\" sigmoid 0.1 0.5 1000 \"bp_A1-turbine_sigmoid_1000_0.1_0.5_4-9-5-1.csv\""
-train_bp_synthetic = "julia --project=. network/bp.jl \"datasets/split/A1-synthetic\" \"[9; 9; 5; 1]\" sigmoid 0.1 0.5 1000 \"bp_A1-synthetic_sigmoid_1000_0.1_0.5_4-9-5-1.csv\""
-train_bp_top10s = "julia --project=. network/bp.jl \"datasets/split/A1-top10s\" \"[9; 9; 5; 1]\" sigmoid 0.1 0.5 1000 \"bp_A1-top10s_sigmoid_1000_0.1_0.5_4-9-5-1.csv\""
+train_bp_turbine = "julia --project=. network/bp.jl \"datasets/split/A1-turbine\" \"[4; 4; 6; 8; 1]\" sigmoid 0.2 0.9 1000 \"bp_A1-turbine_sigmoid_1000_0.2_0.9_4-4-6-8-1.csv\""
+train_bp_synthetic = "julia --project=. network/bp.jl \"datasets/split/A1-synthetic\" \"[9; 8; 3; 1]\" sigmoid 0.05 0.7 1000 \"bp_A1-synthetic_sigmoid_1000_0.05_0.7_4-8-3-1.csv\""
+train_bp_top10s = "julia --project=. network/bp.jl \"datasets/split/A1-top10s\" \"[9; 9; 1]\" sigmoid 0.1 0.7 1000 \"bp_A1-top10s_sigmoid_1000_0.1_0.7_4-9-1.csv\""
 
 train_mlr = "python network/mlr.py"
 
