@@ -41,13 +41,13 @@ pipenv run split
 ```sh
 pipenv run analyze
 ```
-5. Evaluate the models:
-```sh
-pipenv run evaluate
-```
-6. Train the MLR models:
+5. Train the MLR models:
 ```sh
 pipenv run train_mlr
+```
+6. Evaluate the models:
+```sh
+pipenv run evaluate
 ```
 7. You can now edit the Pipfile to set the found best parameters (already done), and train the models with them:
 ```sh
