@@ -163,10 +163,14 @@ end
 
 function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Vector{Float64}, learning_rate::Float64, momentum::Float64, epochs::Int64)
     errors = []
-    for _ in 1:epochs
+    eval = []
+    for i in 1:epochs
         quadratic_error = 0
         for pattern in 1:length(x_in)
             y = feed_forward!(nn, x_in[pattern])
+            if i == epochs
+                eval = [eval; y]
+            end
             back_propagation!(nn, y, desired_outputs[pattern])
             update_weights_and_thresholds!(nn, learning_rate, momentum)
             #Dimension(z)==1, so only one loop is needed (TODO: Sure?)
@@ -175,7 +179,8 @@ function train(nn::NeuralNet, x_in::Vector{Vector{Float64}}, desired_outputs::Ve
         errors = [errors; 0.5 * quadratic_error]
     end
 
-    # Write in CSV file the errors
+    # Write in CSV file the errors and evaluation
+    CSV.write("evaluation/results/eval_" * out_filename, DataFrames.DataFrame("Z" => desired_outputs, "Y" => eval))
     CSV.write("evaluation/results/epochs_" * out_filename, DataFrames.DataFrame("Epoch" => 1:epochs, "Error" => errors))
 end
 
