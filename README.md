@@ -63,3 +63,7 @@ Note: During development, when adding or removing a package to the Julia project
 Romain Monier [ [GitHub](https://github.com/rmonier) ] – Co-developer
 
 Marlon Funk [ [GitHub](https://github.com/MarlonFunk) ] – Co-developer
+
+## Contact
+
+Project Link: https://github.com/rmonier/backpropagation
