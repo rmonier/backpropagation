@@ -41,19 +41,19 @@ pipenv run split
 ```sh
 pipenv run analyze
 ```
-5. Edit the Pipfile to set the found best parameters, and train the models with them:
+5. Evaluate the models:
 ```sh
-pipenv run train_bp_turbine
-pipenv run train_bp_synthetic
-pipenv run train_bp_top10s
+pipenv run evaluate
 ```
 6. Train the MLR models:
 ```sh
 pipenv run train_mlr
 ```
-7. Evaluate the models:
+7. You can now edit the Pipfile to set the found best parameters (already done), and train the models with them:
 ```sh
-pipenv run evaluate
+pipenv run train_bp_turbine
+pipenv run train_bp_synthetic
+pipenv run train_bp_top10s
 ```
 
 Note: During development, when adding or removing a package to the Julia project, regenerate the manifest with `julia --project=. -e 'using Pkg; Pkg.resolve()'`
